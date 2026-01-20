@@ -14,12 +14,17 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "vue-guard.helloWorld",
-        "title": "Hello World"
+    "commands": [],
+    "configuration": {
+      "title": "VueGuard",
+      "properties": {
+        "vueGuard.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Gemini 3 Flash API anahtarını buraya girin."
+        }
       }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
