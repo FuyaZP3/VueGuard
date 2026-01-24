@@ -14,7 +14,29 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [],
+    "commands": [
+      {
+        "command": "vueGuard.analyzeBlock",
+        "title": "VueGuard: Bu Bloğu Analiz Et",
+        "category": "VueGuard"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vueGuard.analyzeBlock",
+          "group": "navigation",
+          "when": "resourceExtname == .vue"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "vueGuard.analyzeBlock",
+        "key": "ctrl+alt+x",
+        "when": "editorTextFocus && resourceExtname == .vue"
+      }
+    ],
     "configuration": {
       "title": "VueGuard",
       "properties": {
@@ -47,7 +69,10 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.10",
+    "@typescript-eslint/parser": "^8.53.1",
     "ai": "^6.0.42",
+    "eslint-scope": "^9.1.0",
+    "vue-eslint-parser": "^10.2.0",
     "zod": "^4.3.5"
   }
 }
