@@ -16,13 +16,16 @@ export function activate(context: vscode.ExtensionContext) {
 		const cursorOffset = document.offsetAt(editor.selection.active);
 
 		try {
-			const ast = parser.parse(code, {
+			const resultParse = parser.parseForESLint(code, {
 				parser: require.resolve('@typescript-eslint/parser'),
 				sourceType: 'module',
 				ecmaVersion: 2020,
-				ecmaFeatures: { jsx: true }
 			});
 
+			const ast = resultParse.ast;
+			const scopeManager = resultParse.scopeManager;
+			let targetName = '';
+			let targetIdentifier: any = null;
 			let foundNode: any = null;
 
 			const checkNode = (node: parser.AST.Node) => {
@@ -36,30 +39,38 @@ export function activate(context: vscode.ExtensionContext) {
 			// for JS/TS
 			parser.AST.traverseNodes(ast, {
 				enterNode: checkNode,
-				leaveNode() {}
+				leaveNode: () => {}
 			});
 
 			// for template body (VNodes, VElement...)
 			if(ast.templateBody) {
 				parser.AST.traverseNodes(ast.templateBody, {
 					enterNode: checkNode,
-					leaveNode() {}
+					leaveNode: () => {}
 				});
 			}
 
-			if(foundNode) {
-				const isTemplate = foundNode.type.startsWith('V');
-				const label = isTemplate ? 'Template Düğümü' : 'Script Düğümü';
+			// get identifier name
+			if (foundNode && foundNode.type === 'VIdentifier' || foundNode.type === 'Identifier') {
+				targetName = foundNode.name;
+				console.log('Bulunan Değişken Adı: ', foundNode.name);
 
-				vscode.window.showInformationMessage(`${label}: ${foundNode.type}`);
-				console.log('Düğüm Detayı: ', foundNode);
+				const variable = scopeManager?.acquire(foundNode) || scopeManager?.getDeclaredVariables(foundNode.parent)[0];
 
-				if (foundNode.type === 'VIdentifier' || foundNode.type === 'Identifier') {
-					console.log('Bulunan Değişken Adı: ', foundNode.name);
+				if(variable) {
+					// get real refs for this variable
+					const refs = variable.references.map((ref: any) => {
+						const line = editor.document.positionAt(ref.identifier.range[0]).line;
+						const lineText = editor.document.lineAt(line).text.trim();
+
+						return `[Satır ${line + 1}]: ${lineText}`;
+					});
+
+					console.log(`Gerçek Referanslar (${variable}): `, refs);
+
+					vscode.window.showInformationMessage(`${variable} için ${refs.length} gerçek referans bulundu.`);
 				}
-			
-			} else {
-				vscode.window.showInformationMessage('Bu konumda bir düğüm bulunamadı!');
+
 			}
 		} catch(error: any) {
 			vscode.window.showErrorMessage('AST Ayrıştırma Hatası: ', error);
